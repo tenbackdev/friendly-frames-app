@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './style.css';
+import Match from './Match';
+import PlayerStats from './PlayerStats';
 
 const FriendlyFramesApp = () => {
   const [gameDate, setGameDate] = useState(formatDate(new Date()));
@@ -230,10 +232,9 @@ const FriendlyFramesApp = () => {
       setPlayer2Opens(0);
     }
   };
-
+  
   return (
     <div className="min-h-screen bg-gray-100 p-4">
-
       {/* Fixed position header container */}
       <div className="fixed top-0 left-0 right-0 z-10 bg-gray-100 p-4 print:hidden">
         <header className="max-w-4xl mx-auto bg-indigo-600 rounded-lg shadow">
@@ -481,7 +482,7 @@ const FriendlyFramesApp = () => {
             </form>
           </div>
 
-          {/* Matches Display Section */}
+          {/* Matches Display Section - Now using Match component */}
           <div className="bg-white rounded-lg p-6 shadow-md">
             <h2 className="text-xl font-semibold mb-4 text-gray-800 text-center">Match History</h2>
             
@@ -490,111 +491,32 @@ const FriendlyFramesApp = () => {
             ) : (
               <div className="space-y-4">
                 {matches.map((match) => (
-                  <div key={match.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                    <div className="text-sm text-gray-500 mb-2">{match.date}</div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <div className="font-semibold">{match.player1.name}</div>
-                        <div className="text-lg">{match.player1.score}</div>
-                        <div className="text-sm text-gray-600">
-                          <div>{match.player1.strikes} strikes</div>
-                          <div>{match.player1.spares} spares</div>
-                          <div>{match.player1.opens} opens</div>
-                        </div>
-                      </div>
-                      <div className="text-center my-auto">
-                        <div className="text-xl font-bold">vs</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold">{match.player2.name}</div>
-                        <div className="text-lg">{match.player2.score}</div>
-                        <div className="text-sm text-gray-600">
-                          <div>{match.player2.strikes} strikes</div>
-                          <div>{match.player2.spares} spares</div>
-                          <div>{match.player2.opens} opens</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <Match key={match.id} match={match} />
                 ))}
               </div>
             )}
           </div>
         </div>
 
-        {/* Statistics Section */}
+        {/* Statistics Section - Now using PlayerStats component */}
         {matches.length > 0 && (
           <div className="bg-white rounded-lg p-6 shadow-md mb-6">
             <h2 className="text-xl font-semibold mb-4 text-gray-800 text-center">Player Statistics</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Andy Stats */}
-              <div className="border border-indigo-200 rounded-lg p-4 bg-indigo-50">
-                <h3 className="text-lg font-semibold mb-3 text-indigo-700 text-center">Andy</h3>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-white p-3 rounded shadow-sm">
-                    <div className="text-gray-600 text-sm">Total Pins</div>
-                    <div className="text-2xl font-bold text-indigo-600">{stats.andy.totalPins}</div>
-                  </div>
-                  <div className="bg-white p-3 rounded shadow-sm">
-                    <div className="text-gray-600 text-sm">Average Score</div>
-                    <div className="text-2xl font-bold text-indigo-600">{stats.andy.avgScore}</div>
-                  </div>
-                </div>
-                
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600">Strikes</div>
-                    <div className="font-semibold">{stats.andy.totalStrikes} total</div>
-                    <div className="text-xs text-gray-500">({stats.andy.avgStrikes} avg)</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600">Spares</div>
-                    <div className="font-semibold">{stats.andy.totalSpares} total</div>
-                    <div className="text-xs text-gray-500">({stats.andy.avgSpares} avg)</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600">Opens</div>
-                    <div className="font-semibold">{stats.andy.totalOpens} total</div>
-                    <div className="text-xs text-gray-500">({stats.andy.avgOpens} avg)</div>
-                  </div>
-                </div>
-              </div>
+              <PlayerStats 
+                player="Andy" 
+                stats={stats.andy} 
+                colorScheme="indigo" 
+              />
               
               {/* Patrick Stats */}
-              <div className="border border-green-200 rounded-lg p-4 bg-green-50">
-                <h3 className="text-lg font-semibold mb-3 text-green-700 text-center">Patrick</h3>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-white p-3 rounded shadow-sm">
-                    <div className="text-gray-600 text-sm">Total Pins</div>
-                    <div className="text-2xl font-bold text-green-600">{stats.patrick.totalPins}</div>
-                  </div>
-                  <div className="bg-white p-3 rounded shadow-sm">
-                    <div className="text-gray-600 text-sm">Average Score</div>
-                    <div className="text-2xl font-bold text-green-600">{stats.patrick.avgScore}</div>
-                  </div>
-                </div>
-                
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600">Strikes</div>
-                    <div className="font-semibold">{stats.patrick.totalStrikes} total</div>
-                    <div className="text-xs text-gray-500">({stats.patrick.avgStrikes} avg)</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600">Spares</div>
-                    <div className="font-semibold">{stats.patrick.totalSpares} total</div>
-                    <div className="text-xs text-gray-500">({stats.patrick.avgSpares} avg)</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600">Opens</div>
-                    <div className="font-semibold">{stats.patrick.totalOpens} total</div>
-                    <div className="text-xs text-gray-500">({stats.patrick.avgOpens} avg)</div>
-                  </div>
-                </div>
-              </div>
+              <PlayerStats 
+                player="Patrick" 
+                stats={stats.patrick} 
+                colorScheme="green" 
+              />
             </div>
           </div>
         )}

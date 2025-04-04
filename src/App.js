@@ -4,7 +4,8 @@ import Match from './components/Match';
 import PlayerStats from './components/PlayerStats';
 import AddMatchForm from './components/AddMatchForm';
 
-const scriptURLTest = 'https://script.google.com/macros/s/AKfycbwmKf1gvZ6Avnko0R9bE_VS6ZBs3WfGkGHiOiA0wQ38UC5fjtoqeK1lUDXb8xbZtnm5/exec';
+const scriptURL = 'https://script.google.com/macros/s/AKfycbzfKDyCXsrpeZuqEwslJmL--bCHNtHtC4eUR_jaRVBKlahWfnG2dNF0zEi7W2GvwNAp/exec';
+const scriptURLSubmit = 'https://script.google.com/macros/s/AKfycbweU28wjVvsdFSzfSyYO60ZAEaT_tcLTZkO_n-JrXYMffvwVlpV9PsYgZlwWeGyA_aU/exec'
 
 const FriendlyFramesApp = () => {
   const [gameDate, setGameDate] = useState(formatDate(new Date()));
@@ -46,104 +47,111 @@ const FriendlyFramesApp = () => {
   }
 
   // Fetch matches from Google Sheets for a specific date
-  const fetchMatchesForDate = async (date) => {
-    return new Promise((resolve, reject) => {
-      // Create a unique callback function name
-      const callbackName = `jsonp_callback_${Date.now()}`;
-      
-      // Construct the URL with JSONP callback
-      const scriptURL = 'https://script.google.com/macros/s/AKfycbwTCiyqoC2ln7EtOd8EJSJhTmSATx2Uu96J1FZhbwpzSWsb2mVxRBG_rfu2d7BS9vBF/exec';
-      const url = `${scriptURL}?action=getMatchesByDate&date=${date}&callback=${callbackName}`;
+// Add this function to your FriendlyFramesApp component
+const fetchMatchesForDate = async (date) => {
+  try {
+    const apiUrl = `/api/getMatches?date=${date}&timestamp=${new Date().getTime()}`
+    console.log(apiUrl);
+    // Call your Vercel API endpoint
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.matches || data.matches.length === 0) {
+      console.warn('No matches found for the selected date');
+      setMatches([]);
+      return;
+    }
+    
+    // Transform fetched data into the format your app expects
+    const fetchedMatches = data.matches.map((match, index) => ({
+      id: `${date}-${index}`, 
+      date: match.Date,
+      player1: {
+        name: match.PlayerOneName,
+        score: parseInt(match.PlayerOneScore),
+        strikes: parseInt(match.PlayerOneStrikes),
+        spares: parseInt(match.PlayerOneSpares),
+        opens: parseInt(match.PlayerOneOpens)
+      },
+      player2: {
+        name: match.PlayerTwoName,
+        score: parseInt(match.PlayerTwoScore),
+        strikes: parseInt(match.PlayerTwoStrikes),
+        spares: parseInt(match.PlayerTwoSpares),
+        opens: parseInt(match.PlayerTwoOpens)
+      }
+    }));
+    
+    setMatches(fetchedMatches);
+  } catch (error) {
+    console.error('Error fetching matches:', error);
+    // Add user-friendly error handling
+    alert('Failed to fetch matches. Please try again.');
+  }
+};
   
-      // Create a script element
-      const script = document.createElement('script');
-      script.src = url;
-  
-      // Define the global callback function
-      window[callbackName] = (data) => {
-        // Clean up the global callback
-        delete window[callbackName];
-        document.body.removeChild(script);
-  
-        if (!data.matches || data.matches.length === 0) {
-          console.warn('No matches found for the selected date');
-          resolve([]);
-          return;
-        }
-  
-        // Transform fetched data into matches format
-        const fetchedMatches = data.matches.map((match, index) => ({
-          id: `${date}-${index}`, 
-          date: match.Date,
-          player1: {
-            name: match.PlayerOneName,
-            score: match.PlayerOneScore,
-            strikes: match.PlayerOneStrikes,
-            spares: match.PlayerOneSpares,
-            opens: match.PlayerOneOpens
-          },
-          player2: {
-            name: match.PlayerTwoName,
-            score: match.PlayerTwoScore,
-            strikes: match.PlayerTwoStrikes,
-            spares: match.PlayerTwoSpares,
-            opens: match.PlayerTwoOpens
-          }
-        }));
-  
-        setMatches(fetchedMatches);
-        resolve(fetchedMatches);
-      };
-  
-      // Handle script loading errors
-      script.onerror = () => {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        console.error('Error fetching matches');
-        reject(new Error('Failed to fetch matches'));
-      };
-  
-      // Append the script to the body to trigger the request
-      document.body.appendChild(script);
-    });
-  };
 
 // Update submitToGoogleSheets method
-const submitToGoogleSheets = async (matchData) => {
-  const scriptURL = 'https://script.google.com/macros/s/AKfycbwTCiyqoC2ln7EtOd8EJSJhTmSATx2Uu96J1FZhbwpzSWsb2mVxRBG_rfu2d7BS9vBF/exec'; 
-  
+const submitToGoogleSheets = async (formData) => {
   try {
-    const response = await fetch(scriptURL, {
+    console.log("Submitting data:", formData);
+    
+    // Make sure all numeric values are parsed as integers
+    const processedData = {
+      date: formData.date,
+      player1: {
+        name: formData.player1.name,
+        score: parseInt(formData.player1.score),
+        strikes: parseInt(formData.player1.strikes),
+        spares: parseInt(formData.player1.spares),
+        opens: parseInt(formData.player1.opens)
+      },
+      player2: {
+        name: formData.player2.name,
+        score: parseInt(formData.player2.score),
+        strikes: parseInt(formData.player2.strikes),
+        spares: parseInt(formData.player2.spares),
+        opens: parseInt(formData.player2.opens)
+      }
+    };
+    
+    console.log("Processed data:", JSON.stringify(processedData));
+
+    const response = await fetch('/api/handler', {
       method: 'POST',
-      mode: 'no-cors',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        date: matchData.date,
-        PlayerOneName: matchData.player1.name,
-        PlayerOneScore: matchData.player1.score,
-        PlayerOneStrikes: matchData.player1.strikes,
-        PlayerOneSpares: matchData.player1.spares,
-        PlayerOneOpens: matchData.player1.opens,
-        PlayerTwoName: matchData.player2.name,
-        PlayerTwoScore: matchData.player2.score,
-        PlayerTwoStrikes: matchData.player2.strikes,
-        PlayerTwoSpares: matchData.player2.spares,
-        PlayerTwoOpens: matchData.player2.opens
-      }),
+      body: JSON.stringify(processedData),
     });
 
-    //if (!response.ok) {
-    //  throw new Error('Network response was not ok');
-    //}
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("API Error Response:", errorText);
+      try {
+        const errorData = JSON.parse(errorText);
+        throw new Error(`Error: ${errorData.message || response.statusText}`);
+      } catch (e) {
+        throw new Error(`Error: ${response.statusText} - ${errorText}`);
+      }
+    }
+
+    const result = await response.json();
+    console.log("Success:", result);
     
-    // After successful submission, fetch updated matches for the current date
-    await fetchMatchesForDate(gameDate);
-    return true;
+    // Refresh the matches after submission
+    fetchMatchesForDate(gameDate);
+    
+    return result;
   } catch (error) {
-    console.error('Error submitting to Google Sheets:', error);
-    return false;
+    console.error("Error submitting to Google Sheets:", error);
+    alert("Error submitting data: " + error.message);
+    throw error;
   }
 };
 
@@ -235,7 +243,7 @@ const submitToGoogleSheets = async (matchData) => {
     }
   }, [matches]);
 
-  const urlTesting = `${scriptURLTest}?action=getMatchesByDate&date=${gameDate}`
+  const urlTesting = `${scriptURL}?action=getMatchesByDate&date=${gameDate}`
   console.log(urlTesting)
 
 
